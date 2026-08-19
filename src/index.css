@@ -6,39 +6,26 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 220 15% 12%;
-
     --card: 0 0% 100%;
     --card-foreground: 220 15% 12%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 12%;
-
-    /* Teal primary */
     --primary: 178 70% 32%;
     --primary-foreground: 0 0% 100%;
-
-    /* Coral/Orange accent */
     --brand-accent: 18 92% 55%;
     --brand-accent-foreground: 0 0% 100%;
-
     --secondary: 178 30% 94%;
     --secondary-foreground: 178 70% 25%;
-
     --muted: 210 20% 96%;
     --muted-foreground: 215 15% 50%;
-
     --accent: 18 92% 55%;
     --accent-foreground: 0 0% 100%;
-
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 214 20% 90%;
     --input: 214 20% 90%;
     --ring: 178 70% 32%;
-
     --radius: 0.75rem;
-
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -48,7 +35,6 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-
   .dark {
     --background: 222 25% 8%;
     --foreground: 210 40% 96%;
@@ -81,31 +67,82 @@
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
-
+  * { @apply border-border; }
   body {
     @apply bg-background text-foreground;
     font-family: 'Inter', sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
-
-  h1, h2, h3 {
-    font-family: 'Poppins', sans-serif;
-  }
+  h1, h2, h3 { font-family: 'Poppins', sans-serif; }
 }
 
 @layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .bottom-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+}
+
+/* Website Builder: layout-only responsive polish. No controls or behavior changed. */
+@media (max-width: 767px) {
+  body:has(button[aria-label="Back"]) .min-h-screen.bg-gray-50.pb-24 {
+    min-height: 100dvh;
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    overflow-x: hidden;
   }
 
-  .bottom-safe {
-    padding-bottom: env(safe-area-inset-bottom, 16px);
+  body:has(button[aria-label="Back"]) .sticky.top-0.z-40 {
+    padding-top: env(safe-area-inset-top, 0px);
+    box-shadow: 0 1px 12px rgba(15, 23, 42, 0.06);
+  }
+
+  body:has(button[aria-label="Back"]) .sticky.top-0.z-40 > div:first-child {
+    min-height: 64px;
+  }
+
+  body:has(button[aria-label="Back"]) .sticky.top-0.z-40 .flex.border-b.overflow-x-auto {
+    min-height: 54px;
+    gap: 2px;
+    padding: 0 6px;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body:has(button[aria-label="Back"]) .sticky.top-0.z-40 .flex.border-b.overflow-x-auto > button {
+    min-width: 72px;
+    min-height: 54px;
+    padding: 10px 12px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
+  body:has(button[aria-label="Back"]) .px-4.pt-4 {
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 14px;
+  }
+
+  body:has(button[aria-label="Back"]) .grid.grid-cols-2.gap-3 {
+    gap: 10px;
+  }
+
+  body:has(button[aria-label="Back"]) .grid.grid-cols-3.gap-3 {
+    gap: 8px;
+  }
+
+  body:has(button[aria-label="Back"]) .rounded-2xl {
+    border-radius: 16px;
+  }
+}
+
+@media (min-width: 768px) {
+  body:has(button[aria-label="Back"]) .min-h-screen.bg-gray-50.pb-24 {
+    max-width: 1100px;
+    margin: 0 auto;
+    box-shadow: 0 0 30px rgba(15, 23, 42, 0.04);
+  }
+
+  body:has(button[aria-label="Back"]) .sticky.top-0.z-40 > div:first-child {
+    padding-left: 24px;
+    padding-right: 24px;
   }
 }
