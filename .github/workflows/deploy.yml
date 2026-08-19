@@ -26,6 +26,19 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install --legacy-peer-deps
+      - name: Fix GitHub Pages website links
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/pages/WebsiteBuilder.tsx')
+          s = p.read_text()
+          old = "const storeUrl = website ? `${window.location.origin}/shop/${website.slug}` : '';"
+          new = "const storeUrl = website ? `${window.location.origin}/UdupiGo-9biegg/shop/${website.slug}` : '';"
+          if old not in s:
+              raise SystemExit('Expected website link code was not found')
+          p.write_text(s.replace(old, new, 1))
+          print('Fixed generated website URL for GitHub Pages')
+          PY
       - name: Build
         run: npm run build
       - name: Setup Pages
