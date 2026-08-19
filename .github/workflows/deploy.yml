@@ -20,32 +20,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+
       - name: Install dependencies
         run: npm install --legacy-peer-deps
-      - name: Fix GitHub Pages website links
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('src/pages/WebsiteBuilder.tsx')
-          s = p.read_text()
-          old = "const storeUrl = website ? `${window.location.origin}/shop/${website.slug}` : '';"
-          new = "const storeUrl = website ? `${window.location.origin}/UdupiGo-9biegg/shop/${website.slug}` : '';"
-          if old in s:
-              p.write_text(s.replace(old, new, 1))
-              print('Fixed generated website URL for GitHub Pages')
-          else:
-              print('Website URL already uses the GitHub Pages base path')
-          PY
+
       - name: Build
         run: npm run build
-      - name: Configure SPA fallback for GitHub Pages
+
+      - name: Create GitHub Pages SPA fallback
         run: cp dist/index.html dist/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
