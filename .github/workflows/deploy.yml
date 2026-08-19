@@ -30,6 +30,26 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Fix PublicStore website query order
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('src/pages/PublicStore.tsx')
+          s = p.read_text()
+          marker = '  // Load pages\n'
+          start = s.find('  // Load website\n')
+          end = s.find('  // Load products\n', start)
+          if start == -1 or end == -1 or marker not in s:
+              raise SystemExit('PublicStore query markers not found')
+          website_block = s[start:end]
+          s = s[:start] + s[end:]
+          insert_at = s.find(marker)
+          s = s[:insert_at] + website_block + '\n' + s[insert_at:]
+          p.write_text(s)
+          print('Moved website query before pages/widgets queries')
+          PY
+
       - name: Build
         run: npm run build
 
