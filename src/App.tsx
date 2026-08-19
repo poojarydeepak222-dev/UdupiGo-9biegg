@@ -53,7 +53,7 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/UdupiGo-9biegg">
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
