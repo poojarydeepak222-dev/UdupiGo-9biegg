@@ -30,6 +30,53 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
+      - name: Add Website Design Studio
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('src/pages/WebsiteBuilder.tsx')
+          s = p.read_text()
+
+          import_line = "import BottomNav from '@/components/layout/BottomNav';"
+          design_import = import_line + "\nimport DesignStudio from '@/components/website/DesignStudio';"
+          if "@/components/website/DesignStudio" not in s:
+              if import_line not in s:
+                  raise SystemExit('WebsiteBuilder import anchor not found')
+              s = s.replace(import_line, design_import, 1)
+
+          old_type = "type TabId = 'dashboard' | 'setup' | 'products' | 'orders' | 'pages' | 'widgets' | 'publish';"
+          new_type = "type TabId = 'dashboard' | 'setup' | 'design' | 'products' | 'orders' | 'pages' | 'widgets' | 'publish';"
+          if old_type in s:
+              s = s.replace(old_type, new_type, 1)
+
+          old_tab = "    { id: 'setup', label: 'Setup', icon: '⚙️' },"
+          new_tab = old_tab + "\n    { id: 'design', label: 'Design', icon: '🎨' },"
+          if "{ id: 'design', label: 'Design', icon: '🎨' }" not in s:
+              if old_tab not in s:
+                  raise SystemExit('WebsiteBuilder tab anchor not found')
+              s = s.replace(old_tab, new_tab, 1)
+
+          anchor = "      {/* ── SETUP TAB ── */}"
+          design_block = """      {/* ── DESIGN STUDIO TAB ── */}
+      {activeTab === 'design' && (
+        <DesignStudio
+          value={{ theme_color: setupForm.theme_color, template: setupForm.template }}
+          onChange={(patch) => setSetupForm(f => ({ ...f, ...patch }))}
+          onSave={() => saveMutation.mutate()}
+          saving={saveMutation.isPending}
+        />
+      )}
+
+"""
+          if "activeTab === 'design'" not in s:
+              if anchor not in s:
+                  raise SystemExit('WebsiteBuilder setup anchor not found')
+              s = s.replace(anchor, design_block + anchor, 1)
+
+          p.write_text(s)
+          print('Website Design Studio injected successfully')
+          PY
+
       - name: Build
         run: npm run build
 
