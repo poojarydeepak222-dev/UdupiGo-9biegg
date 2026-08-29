@@ -40,6 +40,7 @@ import Plumbers from "./pages/Plumbers";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import PublicStore from "./pages/PublicStore";
 import Invoice from "./pages/Invoice";
+import UdupiResorts from "./pages/UdupiResorts";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
             <Route path="/website-builder" element={<WebsiteBuilder />} />
             <Route path="/shop/:slug" element={<PublicStore />} />
             <Route path="/invoice" element={<Invoice />} />
+            <Route path="/udupi-resorts" element={<UdupiResorts />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
