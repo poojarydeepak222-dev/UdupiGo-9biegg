@@ -3,51 +3,79 @@ import { ArrowLeft, CheckCircle, MapPin, Plus, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import BottomNav from "@/components/layout/BottomNav";
+import { supabase } from "@/lib/supabase";
 
 type Resort = {
   id: string;
-  name: string;
+  resort_name: string;
   area: string;
   phone: string;
-  address: string;
-  description: string;
-  price: string;
-  rooms: string;
-  amenities: string;
-  image: string;
+  address: string | null;
+  description: string | null;
+  price_per_night: number | null;
+  rooms: number | null;
+  amenities: string | null;
+  photo_url: string | null;
 };
 
-const STORAGE_KEY = "udupigo_resorts";
+const emptyForm = { resort_name: "", area: "", phone: "", address: "", price_per_night: "", rooms: "", amenities: "", description: "", photo_url: "" };
 
 const UdupiResorts = () => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [resorts, setResorts] = useState<Resort[]>([]);
-  const [form, setForm] = useState<Omit<Resort, "id">>({
-    name: "", area: "", phone: "", address: "", description: "", price: "", rooms: "", amenities: "", image: ""
-  });
+  const [form, setForm] = useState(emptyForm);
 
-  useEffect(() => {
-    try { setResorts(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")); } catch { setResorts([]); }
-  }, []);
+  const loadResorts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("resorts")
+      .select("id,resort_name,area,phone,address,description,price_per_night,rooms,amenities,photo_url")
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      toast.error("Unable to load resorts right now");
+    } else setResorts((data || []) as Resort[]);
+    setLoading(false);
+  };
 
-  const submit = (e: React.FormEvent) => {
+  useEffect(() => { loadResorts(); }, []);
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim() || !form.phone.trim() || !form.area.trim()) {
+    if (!form.resort_name.trim() || !form.phone.trim() || !form.area.trim()) {
       toast.error("Please enter resort name, area and phone number");
       return;
     }
-    const item: Resort = { ...form, id: `resort-${Date.now()}` };
-    const next = [item, ...resorts];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    setResorts(next);
-    setForm({ name: "", area: "", phone: "", address: "", description: "", price: "", rooms: "", amenities: "", image: "" });
+    setSaving(true);
+    const { error } = await supabase.from("resorts").insert({
+      resort_name: form.resort_name.trim(),
+      area: form.area.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim() || null,
+      price_per_night: form.price_per_night ? Number(form.price_per_night) : null,
+      rooms: form.rooms ? Number(form.rooms) : null,
+      amenities: form.amenities.trim() || null,
+      description: form.description.trim() || null,
+      photo_url: form.photo_url.trim() || null,
+      status: "pending",
+    });
+    setSaving(false);
+    if (error) {
+      console.error(error);
+      toast.error("Could not submit resort. Please try again.");
+      return;
+    }
+    setForm(emptyForm);
     setShowForm(false);
-    toast.success("Resort added to UdupiGo!");
+    toast.success("Resort submitted! It will appear after admin approval.");
   };
 
-  const call = (phone: string) => window.location.href = `tel:${phone.replace(/\\s/g, "")}`;
-  const whatsapp = (phone: string, name: string) => window.open(`https://wa.me/${phone.replace(/\\D/g, "")}?text=${encodeURIComponent(`Hello ${name}, I found your resort on UdupiGo.`)}`, "_blank");
+  const call = (phone: string) => { window.location.href = `tel:${phone.replace(/\s/g, "")}`; };
+  const whatsapp = (phone: string, name: string) => window.open(`https://wa.me/${phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello ${name}, I found your resort on UdupiGo.`)}`, "_blank");
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
@@ -65,21 +93,23 @@ const UdupiResorts = () => {
       </section>
 
       <main className="px-4 mt-5 space-y-3">
-        {resorts.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-2xl p-8 text-center text-sm text-gray-500">Loading resorts...</div>
+        ) : resorts.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
             <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-teal/10 flex items-center justify-center text-3xl">🏝️</div>
-            <h3 className="font-heading font-bold text-gray-900 mt-3">No resorts listed yet</h3>
-            <p className="text-xs text-gray-500 mt-1">Be the first resort owner to add a listing.</p>
+            <h3 className="font-heading font-bold text-gray-900 mt-3">No approved resorts yet</h3>
+            <p className="text-xs text-gray-500 mt-1">Be the first resort owner to submit a listing.</p>
             <button onClick={() => setShowForm(true)} className="mt-4 bg-brand-teal text-white px-5 py-2.5 rounded-xl text-sm font-bold">+ Add Your Resort</button>
           </div>
         ) : resorts.map(resort => (
           <article key={resort.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
-            {resort.image && <img src={resort.image} alt={resort.name} className="w-full h-44 object-cover" />}
+            {resort.photo_url && <img src={resort.photo_url} alt={resort.resort_name} className="w-full h-44 object-cover" />}
             <div className="p-4">
-              <div className="flex justify-between gap-3"><div><h3 className="font-heading font-bold text-gray-900 text-base">{resort.name}</h3><p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12}/>{resort.area}</p></div><span className="text-amber-500 text-xs flex items-center gap-1"><Star size={13} fill="currentColor"/> New</span></div>
+              <div className="flex justify-between gap-3"><div><h3 className="font-heading font-bold text-gray-900 text-base">{resort.resort_name}</h3><p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12}/>{resort.area}</p></div><span className="text-amber-500 text-xs flex items-center gap-1"><Star size={13} fill="currentColor"/> Verified</span></div>
               {resort.description && <p className="text-xs text-gray-600 mt-3 leading-relaxed">{resort.description}</p>}
-              <div className="flex flex-wrap gap-1.5 mt-3">{resort.price && <span className="bg-green-50 text-green-700 px-2 py-1 rounded-lg text-[10px] font-semibold">₹{resort.price}/night</span>}{resort.rooms && <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-[10px]">{resort.rooms} rooms</span>}{resort.amenities.split(",").filter(Boolean).slice(0,4).map(a => <span key={a} className="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-[10px]">{a.trim()}</span>)}</div>
-              <div className="grid grid-cols-2 gap-2 mt-4"><button onClick={() => call(resort.phone)} className="rounded-xl bg-brand-teal text-white py-2.5 text-xs font-bold">Call Resort</button><button onClick={() => whatsapp(resort.phone, resort.name)} className="rounded-xl bg-green-600 text-white py-2.5 text-xs font-bold">WhatsApp</button></div>
+              <div className="flex flex-wrap gap-1.5 mt-3">{resort.price_per_night != null && <span className="bg-green-50 text-green-700 px-2 py-1 rounded-lg text-[10px] font-semibold">₹{resort.price_per_night}/night</span>}{resort.rooms != null && <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-[10px]">{resort.rooms} rooms</span>}{(resort.amenities || "").split(",").filter(Boolean).slice(0,4).map(a => <span key={a} className="bg-gray-100 text-gray-600 px-2 py-1 rounded-lg text-[10px]">{a.trim()}</span>)}</div>
+              <div className="grid grid-cols-2 gap-2 mt-4"><button onClick={() => call(resort.phone)} className="rounded-xl bg-brand-teal text-white py-2.5 text-xs font-bold">Call Resort</button><button onClick={() => whatsapp(resort.phone, resort.resort_name)} className="rounded-xl bg-green-600 text-white py-2.5 text-xs font-bold">WhatsApp</button></div>
               {resort.address && <p className="text-[10px] text-gray-400 mt-3">{resort.address}</p>}
             </div>
           </article>
@@ -88,14 +118,14 @@ const UdupiResorts = () => {
 
       {showForm && <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-0 sm:p-4">
         <form onSubmit={submit} className="bg-white w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl p-5">
-          <div className="flex items-center justify-between mb-4"><div><h2 className="font-heading font-bold text-lg">Add Your Resort</h2><p className="text-xs text-gray-500">Create a free UdupiGo resort listing</p></div><button type="button" onClick={() => setShowForm(false)} className="text-gray-500 text-2xl">×</button></div>
+          <div className="flex items-center justify-between mb-4"><div><h2 className="font-heading font-bold text-lg">Add Your Resort</h2><p className="text-xs text-gray-500">Submit a free UdupiGo resort listing</p></div><button type="button" onClick={() => setShowForm(false)} className="text-gray-500 text-2xl">×</button></div>
           <div className="space-y-3">
-            {[['name','Resort Name *','e.g. Sea View Resort'],['area','Area *','e.g. Malpe, Udupi'],['phone','Phone Number *','+91 98765 43210'],['address','Full Address','Street, Area, Udupi'],['price','Price per Night','e.g. 2500'],['rooms','Number of Rooms','e.g. 20'],['image','Resort Photo URL','https://...']].map(([key,label,placeholder]) => <div key={key}><label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label><input value={(form as any)[key]} onChange={e => setForm({...form,[key]:e.target.value})} placeholder={placeholder} type={key === 'phone' ? 'tel' : 'text'} className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-brand-teal" /></div>)}
+            {[['resort_name','Resort Name *','e.g. Sea View Resort'],['area','Area *','e.g. Malpe, Udupi'],['phone','Phone Number *','+91 98765 43210'],['address','Full Address','Street, Area, Udupi'],['price_per_night','Price per Night','e.g. 2500'],['rooms','Number of Rooms','e.g. 20'],['photo_url','Resort Photo URL','https://...']].map(([key,label,placeholder]) => <div key={key}><label className="block text-xs font-semibold text-gray-700 mb-1">{label}</label><input value={(form as any)[key]} onChange={e => setForm({...form,[key]:e.target.value})} placeholder={placeholder} type={key === 'phone' ? 'tel' : key === 'price_per_night' || key === 'rooms' ? 'number' : 'text'} className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-brand-teal" /></div>)}
             <div><label className="block text-xs font-semibold text-gray-700 mb-1">Amenities</label><input value={form.amenities} onChange={e => setForm({...form,amenities:e.target.value})} placeholder="Pool, WiFi, Parking, Restaurant" className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-brand-teal" /></div>
             <div><label className="block text-xs font-semibold text-gray-700 mb-1">Description</label><textarea value={form.description} onChange={e => setForm({...form,description:e.target.value})} placeholder="Tell guests about your resort..." rows={3} className="w-full border border-gray-200 rounded-xl px-3 py-3 text-sm outline-none focus:border-brand-teal resize-none" /></div>
           </div>
-          <div className="bg-amber-50 text-amber-800 text-[10px] rounded-xl p-3 mt-4">Listings are shown on this device for now. Add Supabase later for shared listings, owner accounts, image uploads and admin approval.</div>
-          <button type="submit" className="w-full bg-brand-teal text-white font-bold py-3.5 rounded-xl mt-4 flex items-center justify-center gap-2"><CheckCircle size={17}/> Publish Resort</button>
+          <div className="bg-blue-50 text-blue-800 text-[10px] rounded-xl p-3 mt-4">Your resort is saved securely in UdupiGo. New listings are reviewed by the admin before appearing publicly.</div>
+          <button disabled={saving} type="submit" className="w-full bg-brand-teal text-white font-bold py-3.5 rounded-xl mt-4 flex items-center justify-center gap-2 disabled:opacity-60">{saving ? "Submitting..." : <><CheckCircle size={17}/> Submit Resort</>}</button>
         </form>
       </div>}
       <BottomNav />
