@@ -6,6 +6,7 @@ const QUICK_ACTIONS = [
   { id: 'beauty', label: 'Beauty\nStore', bg: '#f5b8a2', logo: '💄', textColor: '#333' },
   { id: 'pay', label: 'Pay\nBills', bg: '#003087', logo: '💳' },
   { id: 'food', label: 'Order\nFood', bg: '#e8480c', logo: '🍔' },
+  { id: 'resorts', label: 'Udupi\nResorts', bg: '#087f73', logo: '🏝️' },
 ];
 
 const QuickActions = () => {
@@ -17,15 +18,12 @@ const QuickActions = () => {
         {QUICK_ACTIONS.map(action => (
           <button
             key={action.id}
-            onClick={() => navigate('/more')}
+            onClick={() => action.id === 'resorts' ? navigate('/udupi-resorts') : navigate('/more')}
             className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-1 shadow-sm hover:shadow-md transition-shadow active:scale-95"
             style={{ backgroundColor: action.bg }}
           >
             <span className="text-2xl">{action.logo}</span>
-            <span
-              className="text-[9px] font-bold text-center leading-tight"
-              style={{ color: action.textColor || 'white' }}
-            >
+            <span className="text-[9px] font-bold text-center leading-tight" style={{ color: action.textColor || 'white' }}>
               {action.label}
             </span>
           </button>
