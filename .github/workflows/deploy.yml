@@ -36,6 +36,9 @@ jobs:
       - name: Create GitHub Pages SPA fallback
         run: cp dist/index.html dist/404.html
 
+      - name: Verify Pages artifact
+        run: test -f dist/index.html && test -f dist/404.html && echo "Pages files verified"
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
